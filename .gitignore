@@ -1,0 +1,6 @@
+*.log
+*.csv
+dataset/data/*
+dataset/data_cache/*
+*.npy
+*.pyc
