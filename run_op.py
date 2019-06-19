@@ -30,11 +30,16 @@ def save_output(dataset_name, eps, acc, seconds):
 
 
 if __name__=="__main__":
-    assert len(sys.argv) == 2, "provide dataset name"
-    dataset_name = sys.argv[1]
-    run_average = 5
-    epsilon_schedule = [0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 1]
+    if len(sys.argv) == 4:
+        dataset_name = sys.argv[1]
+        tau = int(sys.argv[2])
+        run_average = int(sys.argv[3])
+    else:
+        dataset_name = input("Enter dataset name: ")
+        tau = int(input("Enter tau: "))
+        run_average = int(input("Enter run average: "))
     # epsilon_schedule = [1]
+    epsilon_schedule = [0.001, 0.1, 0.3, 0.5, 0.7, 1]
 
     # X,y = get_dataset("sync_5,10000")
     X,y = get_dataset(dataset_name)
@@ -46,7 +51,8 @@ if __name__=="__main__":
 
     solver = OP_MIP(X, y, dataset_name, 1)
     for eps in epsilon_schedule:
-        print("epsilon ", eps)
+        print("epsilon =========>>", eps)
+        print("eps acc sec")
         delta =  1.0 / N**2
         acc_sum = 0
         time_sum = 0
