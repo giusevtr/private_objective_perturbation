@@ -32,28 +32,33 @@ def save_output(dataset_name, eps, acc, seconds):
 if __name__=="__main__":
     assert len(sys.argv) == 2, "provide dataset name"
     dataset_name = sys.argv[1]
-    run_average = 10
-    epsilon_schedule = [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1]
+    run_average = 5
+    epsilon_schedule = [0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 1]
+    # epsilon_schedule = [1]
 
     # X,y = get_dataset("sync_5,10000")
     X,y = get_dataset(dataset_name)
     N = X.shape[0]
+    D = X.shape[1]
 
-    solver = OP_MIP(X, y, 1)
+    print("N = ", N)
+    print("D = ", D)
+
+    solver = OP_MIP(X, y, dataset_name, 1)
     for eps in epsilon_schedule:
+        print("epsilon ", eps)
         delta =  1.0 / N**2
         acc_sum = 0
         time_sum = 0
         for _ in range(run_average):
-            star_time = time.time()
             solver.set_noise(eps, delta)
             w_start, acc = solver.get_solution()
             acc_sum += acc
-            elapsed_time = time.time()-star_time
-            time_sum += elapsed_time
-            save_output(dataset_name, eps, acc, elapsed_time)
+            time_sum += solver.run_time
+            # print()
+            print("{} {:.2f} {:.2f}s".format(eps, acc, solver.run_time), end="{}\n".format("                                           "))
+            save_output(dataset_name, eps, acc, solver.run_time)
 
-        print("====================================")
         print("average:")
         print("eps: {}\tacc: {:.2f}\ttime: {:.2f}".format(eps, acc_sum / run_average, time_sum / run_average))
-        print("====================================")
+        print("========================================================================")

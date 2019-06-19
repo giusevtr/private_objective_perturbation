@@ -1,14 +1,16 @@
 import numpy as np
 import sys,os
 from gurobipy import *
-from solvers.utils import  get_max_X_l2_norm, MIP_progress_bar, verify_MIP
+from solvers.utils import *
+import time
 
 ## MIP solver
 class OP_MIP:
-    def __init__(self, X, y, tau):
+    def __init__(self, X, y, dataset_name, tau):
         _eps = 0.00001
         self.X = X
         self.y = y
+        self.dataset_name = dataset_name
         self.tau = tau
         INT_TOL = 1e-5
         self.N, self.D = X.shape
@@ -16,6 +18,12 @@ class OP_MIP:
         self.l2_diameter =np.sqrt(self.D)
         DOT_LIM = self.l2_diameter * self.max_x_l2_norm +1e-3
         self.THRESHOLD = DOT_LIM*INT_TOL
+
+        ########################################################
+        ## state variables
+        ########################################################
+        self.run_time = 0
+
 
         ########################################################
         ## Discretized decision space
@@ -34,6 +42,7 @@ class OP_MIP:
         self.n = {}
         self.r = {}
         self.q = {}
+        self.noise_vector = {}
         self.model = Model("ERM")
         self.model.setParam("OutputFlag", 0)
         # model.setParam("TimeLimit", 5*60)
@@ -43,6 +52,7 @@ class OP_MIP:
         ########################################################
         ## Define variables
         ########################################################
+
         self.sqrt_x = [x for x in self.W_tau_sq] ## All possible values that ||w||^2 can take
         self.sqrt_y = [np.sqrt(self.l2_diameter**2-x+1e-9) for x in self.W_tau_sq] ## sqrt{D^2-||w||^2}
         for i in range(self.W_tau_sq_size):
@@ -77,6 +87,11 @@ class OP_MIP:
             else:
                 self.model.addConstr(quicksum(self.w[j]*self.X[i][j] for j in range(self.D)) <= DOT_LIM*self.e[i])
 
+        ########################################################
+        ## Objective
+        ########################################################
+        self.set_tuning()
+
     def set_noise(self, eps, delta):
         c = 7*np.sqrt(np.log(1.0 / delta))*self.l2_diameter**2/(self.tau**2 * eps)
         noise = np.random.normal(0, c , self.D+1)
@@ -88,9 +103,27 @@ class OP_MIP:
 
     ##
     def get_solution(self):
+        load_solution(self.model, self.dataset_name, self.tau)
+        star_time = time.time()
         self.model.optimize(MIP_progress_bar)
+        self.run_time = time.time() - star_time
         w_start = np.array([self.w[j].X for j in range(self.D)])
         y_pred = np.sign(np.dot(self.X, w_start)-self.THRESHOLD).astype(int)
         y_pred = np.array([b if b !=0 else -1 for b in y_pred])
         acc = (self.y == y_pred).sum()/len(self.y)
+        save_solution(self.model, self.dataset_name, self.tau)
         return w_start, acc
+
+    def set_tuning(self):
+        # Tune
+        prm_file_path = "tuning/tune0.prm"
+        exists = os.path.isfile(prm_file_path)
+        if os.path.isfile(prm_file_path):
+            print("reading parameter file ", prm_file_path)
+            self.model.read(prm_file_path)
+        else:
+            self.model.tune()
+            print("tune results ============> ", self.model.tuneResultCount)
+            for i in range(self.model.tuneResultCount):
+                self.model.getTuneResult(i)
+                self.model.write('tuning/tune'+str(i)+'.prm')

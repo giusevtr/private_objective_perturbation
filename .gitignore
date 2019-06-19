@@ -4,3 +4,5 @@ dataset/data/*
 dataset/data_cache/*
 *.npy
 *.pyc
+*.mst
+*.sol

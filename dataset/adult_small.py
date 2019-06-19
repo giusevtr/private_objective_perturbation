@@ -8,13 +8,16 @@ from utils.utils_preprocessing import convert_to_binary, normalize_rows, format_
 import pandas as pd
 
 url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult/'
-db_name = "adult_small"
+# use_col = [0, 2, 4, 5, 8, 9, 10, 11, 12]
+# use_col = [0, 2, 4, 9, 10, 11, 12]
+use_col = [5,7,8,9,10,11,12]
+db_name = "adult_{}".format("-".join([str(x) for x in use_col]))
 FILENAME_X = '{}_processed_x.npy'.format(db_name)
 FILENAME_Y = '{}_processed_y.npy'.format(db_name)
 
 # preprocess implemented in numpy
 
-def preprocess(cache_location, output_location):
+def preprocess(cache_location="dataset/data_cache", output_location="dataset/data"):
 
     np.random.seed(10000019)
     download_extract(url, cache_location, 'adult.data')
@@ -37,8 +40,8 @@ def preprocess(cache_location, output_location):
             list_test_set.append(row)
 
     np_test_set = np.array(list_test_set[1:-2])
-    # np_set = np.vstack((np_train_set, np_test_set))
-    np_set = np.vstack((np_train_set ))
+    np_set = np.vstack((np_train_set, np_test_set))
+    # np_set = np.vstack((np_train_set ))
 
 
     symbolic_cols = []
@@ -46,8 +49,6 @@ def preprocess(cache_location, output_location):
     label_cols = []
     le = preprocessing.LabelEncoder()
     continuous_pos = [0, 2, 4, 10, 11, 12]
-    # use_col = [5,7,8,9,10,11,12]
-    use_col = [0, 2, 4, 5, 8, 9, 10, 11, 12]
 
     for i in range(np.shape(np_set)[1]):
         col = np_set[:, i]
@@ -77,10 +78,19 @@ def preprocess(cache_location, output_location):
     all_data = np.column_stack([final_data, label_cols])
     np.random.shuffle(all_data)
 
+    ## Subsample
+    all_data = all_data[:30000, :]
 
+    print("Saving")
+    print(FILENAME_X)
+    print(FILENAME_Y)
+    print("rows = ", all_data.shape[0])
+    print("cols = ", all_data.shape[1])
     np.save(os.path.join(output_location, FILENAME_X), all_data[:, :-1])
     np.save(os.path.join(output_location, FILENAME_Y), all_data[:, -1])
 
 if __name__=="__main__":
-    assert len(sys.argv)==3, "takes two arguments"
-    preprocess(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 3:
+        preprocess(sys.argv[1], sys.argv[2])
+    else:
+        preprocess()

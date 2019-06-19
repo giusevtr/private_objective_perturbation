@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from gurobipy import *
+import tempfile
 
 def get_max_X_l2_norm(X):
     N = X.shape[0]
@@ -77,3 +78,31 @@ def verify_MIP(model, w_star, X, y):
 
     print("======================== Done debug")
     # if model.getAttr(GRB.Attr.Status) == GRB.OPTIMAL:
+
+
+def save_solution(model, dataset_name, tau):
+    sol_dir = "solvers/solutions/{}_{}".format(dataset_name, tau)
+    create_directory('solvers/solutions')
+    create_directory(sol_dir)
+    tf = tempfile.NamedTemporaryFile(dir=sol_dir, suffix=".mst", delete=False)
+    model.write(tf.name)
+    # print("saving ", tf.name)
+
+
+def load_solution(model, dataset_name, tau):
+    sol_dir = "solvers/solutions/{}_{}".format(dataset_name, tau)
+    create_directory('solvers/solutions')
+    create_directory(sol_dir)
+    for fn in os.listdir(sol_dir):
+        if fn.endswith('.mst') or fn.endswith('.sol'):
+            path = os.path.join(sol_dir, fn)
+            # print("loading ", fn)
+            # GRBread(model, fn)
+            model.read(path)
+
+
+def create_directory(directory_name):
+    try:
+      os.stat(directory_name)
+    except:
+      os.mkdir(directory_name)
