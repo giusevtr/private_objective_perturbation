@@ -10,8 +10,27 @@ import pandas as pd
 url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult/'
 # use_col = [0, 2, 4, 5, 8, 9, 10, 11, 12]
 # use_col = [0, 2, 4, 9, 10, 11, 12]
-use_col = [5,7,8,9,10,11,12]
+# use_col = [5,7,8,9,10,11,12]
+
+use_col = [0,2,4,10,11,12]
+use_col = [
+# 0 , # age: continuous.
+1 , # workclass: Private, Self-emp-not-inc, Self-emp-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+# 2 , # fnlwgt: continuous.
+3 , # education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+# 4 , # education-num: continuous.
+5 , # marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+6 , # occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+7 , # relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+8 , # race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+9 , # sex: Female, Male.
+# 10, # capital-gain: continuous.
+# 11, # capital-loss: continuous.
+# 12, # hours-per-week: continuous.
+# 13, # native-country
+]
 db_name = "adult_{}".format("-".join([str(x) for x in use_col]))
+# db_name = "adult_small"
 FILENAME_X = '{}_processed_x.npy'.format(db_name)
 FILENAME_Y = '{}_processed_y.npy'.format(db_name)
 
@@ -70,7 +89,8 @@ def preprocess(cache_location="dataset/data_cache", output_location="dataset/dat
             col = np.array([int(j) for j in col])
             label_cols = col.tolist()
 
-    symbolic_cols = convert_to_binary(symbolic_cols)
+    if symbolic_cols:
+        symbolic_cols = convert_to_binary(symbolic_cols)
 
     combined_data = np.column_stack(symbolic_cols+continuous_cols)
     final_data = combined_data
@@ -79,7 +99,9 @@ def preprocess(cache_location="dataset/data_cache", output_location="dataset/dat
     np.random.shuffle(all_data)
 
     ## Subsample
-    all_data = all_data[:30000, :]
+    # all_data = all_data[:30000, :]
+    # all_data = all_data[:15000, :]
+    # all_data = all_data[:7000, :]
 
     print("Saving")
     print(FILENAME_X)
